@@ -52,10 +52,10 @@
                    class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
         </div>
 
-        <button type="submit"
+        <button type="submit" id="submitButton" disabled
                 class="glowing-button w-full px-6 py-4 text-white font-bold text-xl rounded-lg shadow-xl relative transition-all duration-300
-                       hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-            Submit Request
+                       hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            Loading...
         </button>
     </form>
 
@@ -79,6 +79,16 @@
 
     const messageBox = document.getElementById('messageBox');
     const cvRequestForm = document.getElementById('cvRequestForm');
+    const submitButton = document.getElementById('submitButton'); // Get button reference
+
+    /**
+     * Updates the submit button state once authentication is complete.
+     */
+    function setSubmitReadyState() {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit Request';
+        submitButton.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed');
+    }
 
     /**
      * Initializes Firebase and authenticates the user.
@@ -101,7 +111,8 @@
                 if (user) {
                     currentUserId = user.uid;
                     console.log('Firebase user authenticated:', currentUserId);
-                    // No need to display userId on UI for this app, but good for debugging
+                    // Critical: Enable button once user is authenticated
+                    setSubmitReadyState(); 
                 } else {
                     console.log('No user signed in. Attempting anonymous sign-in.');
                     try {
@@ -110,9 +121,13 @@
                         } else {
                             await signInAnonymously(auth);
                         }
+                        // If sign-in fails, the error handler below catches it,
+                        // but if it succeeds, onAuthStateChanged fires again with a user.
                     } catch (error) {
                         console.error('Firebase authentication failed:', error);
                         displayMessage('Authentication failed. Please try again later.', 'bg-red-500 text-white');
+                        // Keep button disabled if auth ultimately fails
+                        submitButton.textContent = 'Auth Failed'; 
                     }
                 }
             });
@@ -154,16 +169,19 @@
     cvRequestForm.addEventListener('submit', async (event) => {
         event.preventDefault(); // Prevent default form submission
 
-        // Optional: Implement client-side loading state on button here
-        const submitButton = event.target.querySelector('button[type="submit"]');
+        // Use the submitButton reference captured globally
         submitButton.disabled = true;
+        const originalText = submitButton.textContent;
         submitButton.textContent = 'Submitting...';
 
+        // NOTE: The check below is mostly redundant now because the button is disabled 
+        // until authentication is complete, but we keep it as a safeguard.
         if (!db || !auth || !auth.currentUser) {
             displayMessage('Database not ready or user not authenticated. Please wait a moment and try again.', 'bg-red-500 text-white');
             console.error('Firestore or Auth not initialized or user not logged in.');
+            // Revert state if the safeguard fires
             submitButton.disabled = false;
-            submitButton.textContent = 'Submit Request';
+            submitButton.textContent = originalText;
             return;
         }
 
@@ -188,8 +206,6 @@
             displayMessage('Thank you for your request! Your CV will be sent to your contact email shortly.', 'bg-green-500 text-white');
             cvRequestForm.reset(); // Clear the form
 
-            // Placeholder for email notification.
-            // In a real application, this submission would trigger a backend process
             console.log('CV request submitted:', formData);
 
         } catch (error) {
@@ -197,7 +213,7 @@
             displayMessage('Failed to submit your request. Please try again.', 'bg-red-500 text-white');
         } finally {
             submitButton.disabled = false;
-            submitButton.textContent = 'Submit Request';
+            submitButton.textContent = originalText;
         }
     });
 
