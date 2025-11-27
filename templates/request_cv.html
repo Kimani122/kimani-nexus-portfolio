@@ -1,4 +1,3 @@
-<!-- templates/request_cv.html -->
 {% extends "base.html" %}
 
 {% block title %}Request CV{% endblock %}
@@ -129,9 +128,18 @@
      * @param {string} typeClass - Tailwind classes for styling the message box (e.g., 'bg-green-500 text-white').
      */
     function displayMessage(message, typeClass) {
+        // Clear color classes and ensure the message box is visible
         messageBox.classList.remove('hidden', 'bg-green-500', 'bg-red-500', 'text-white');
-        messageBox.classList.add(typeClass);
+        
+        // FIX for InvalidCharacterError: Split the string by space and pass the resulting array elements as individual arguments.
+        const classesToAdd = typeClass.split(/\s+/).filter(c => c.length > 0);
+        messageBox.classList.add(...classesToAdd);
+
         messageBox.textContent = message;
+        
+        // Ensure the message box is visible
+        messageBox.classList.remove('hidden');
+
         // Hide message after 5 seconds
         setTimeout(() => {
             messageBox.classList.add('hidden');
@@ -146,9 +154,16 @@
     cvRequestForm.addEventListener('submit', async (event) => {
         event.preventDefault(); // Prevent default form submission
 
+        // Optional: Implement client-side loading state on button here
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+
         if (!db || !auth || !auth.currentUser) {
             displayMessage('Database not ready or user not authenticated. Please wait a moment and try again.', 'bg-red-500 text-white');
             console.error('Firestore or Auth not initialized or user not logged in.');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit Request';
             return;
         }
 
@@ -174,17 +189,15 @@
             cvRequestForm.reset(); // Clear the form
 
             // Placeholder for email notification.
-            // In a real application, you would trigger a serverless function (e.g., Firebase Cloud Function)
-            // or a backend service here to send an email to Kimani with the request details.
+            // In a real application, this submission would trigger a backend process
             console.log('CV request submitted:', formData);
-            console.log('--- Placeholder for Email Notification ---');
-            console.log('A real system would now trigger an email to Kimani with these details:');
-            console.log(JSON.stringify(formData, null, 2));
-            console.log('------------------------------------------');
 
         } catch (error) {
             console.error('Error submitting CV request:', error);
             displayMessage('Failed to submit your request. Please try again.', 'bg-red-500 text-white');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit Request';
         }
     });
 
