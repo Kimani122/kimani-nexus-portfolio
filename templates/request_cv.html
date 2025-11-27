@@ -1,0 +1,194 @@
+<!-- templates/request_cv.html -->
+{% extends "base.html" %}
+
+{% block title %}Request CV{% endblock %}
+
+{% block content %}
+<section class="py-16 text-center fade-in" style="animation-delay: 0.1s;">
+    <h1 class="text-6xl font-extrabold text-white leading-tight mb-4">Request My CV</h1>
+    <p class="text-2xl text-gray-300">Fill out the form below to receive my Curriculum Vitae.</p>
+</section>
+
+<section class="py-16 bg-slate-800 rounded-xl shadow-2xl p-8 max-w-2xl mx-auto fade-in" style="animation-delay: 0.3s;">
+    <h2 class="text-4xl font-bold text-emerald-400 mb-8 text-center">CV Request Form</h2>
+    <form id="cvRequestForm" class="space-y-6">
+        <div>
+            <label for="fullName" class="block text-gray-300 text-lg font-medium mb-2">Full Names</label>
+            <input type="text" id="fullName" name="fullName" required
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+        <div>
+            <label for="phoneNumber" class="block text-gray-300 text-lg font-medium mb-2">Phone Number</label>
+            <input type="tel" id="phoneNumber" name="phoneNumber" required
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+        <div>
+            <label for="requesterEmail" class="block text-gray-300 text-lg font-medium mb-2">Your Contact Email</label>
+            <input type="email" id="requesterEmail" name="requesterEmail" required
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+        <div>
+            <label for="companyName" class="block text-gray-300 text-lg font-medium mb-2">Company/Institution Name</label>
+            <input type="text" id="companyName" name="companyName" required
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+        <div>
+            <label for="position" class="block text-gray-300 text-lg font-medium mb-2">Your Position</label>
+            <input type="text" id="position" name="position" required
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+        <div>
+            <label for="companyEmail" class="block text-gray-300 text-lg font-medium mb-2">Company's Email</label>
+            <input type="email" id="companyEmail" name="companyEmail"
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+        <div>
+            <label for="companyAddress" class="block text-gray-300 text-lg font-medium mb-2">Company's Address</label>
+            <input type="text" id="companyAddress" name="companyAddress"
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+        <div>
+            <label for="companyContact" class="block text-gray-300 text-lg font-medium mb-2">Company's Contact</label>
+            <input type="tel" id="companyContact" name="companyContact"
+                   class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        </div>
+
+        <button type="submit"
+                class="glowing-button w-full px-6 py-4 text-white font-bold text-xl rounded-lg shadow-xl relative transition-all duration-300
+                       hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+            Submit Request
+        </button>
+    </form>
+
+    <!-- Success/Error Message Display -->
+    <div id="messageBox" class="hidden mt-8 p-4 rounded-lg text-center" role="alert"></div>
+</section>
+
+<!-- Firebase SDKs -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Global variables from the Canvas environment
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-kimani-nexus-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let app, db, auth;
+    let currentUserId = 'anonymous'; // Default to anonymous
+
+    const messageBox = document.getElementById('messageBox');
+    const cvRequestForm = document.getElementById('cvRequestForm');
+
+    /**
+     * Initializes Firebase and authenticates the user.
+     * Uses custom token if available, otherwise signs in anonymously.
+     */
+    async function initializeFirebaseAndAuth() {
+        if (!firebaseConfig) {
+            displayMessage('Error: Firebase configuration not found.', 'bg-red-500 text-white');
+            console.error('Firebase configuration (__firebase_config) is missing.');
+            return;
+        }
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Listen for auth state changes
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUserId = user.uid;
+                    console.log('Firebase user authenticated:', currentUserId);
+                    // No need to display userId on UI for this app, but good for debugging
+                } else {
+                    console.log('No user signed in. Attempting anonymous sign-in.');
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error('Firebase authentication failed:', error);
+                        displayMessage('Authentication failed. Please try again later.', 'bg-red-500 text-white');
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing Firebase:', error);
+            displayMessage('Failed to initialize Firebase. Please try again later.', 'bg-red-500 text-white');
+        }
+    }
+
+    /**
+     * Displays a message in the messageBox.
+     * @param {string} message - The message to display.
+     * @param {string} typeClass - Tailwind classes for styling the message box (e.g., 'bg-green-500 text-white').
+     */
+    function displayMessage(message, typeClass) {
+        messageBox.classList.remove('hidden', 'bg-green-500', 'bg-red-500', 'text-white');
+        messageBox.classList.add(typeClass);
+        messageBox.textContent = message;
+        // Hide message after 5 seconds
+        setTimeout(() => {
+            messageBox.classList.add('hidden');
+        }, 5000);
+    }
+
+    /**
+     * Handles the form submission for CV requests.
+     * Collects form data and stores it in Firestore.
+     * @param {Event} event - The form submission event.
+     */
+    cvRequestForm.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent default form submission
+
+        if (!db || !auth || !auth.currentUser) {
+            displayMessage('Database not ready or user not authenticated. Please wait a moment and try again.', 'bg-red-500 text-white');
+            console.error('Firestore or Auth not initialized or user not logged in.');
+            return;
+        }
+
+        const formData = {
+            fullName: document.getElementById('fullName').value,
+            phoneNumber: document.getElementById('phoneNumber').value,
+            requesterEmail: document.getElementById('requesterEmail').value,
+            companyName: document.getElementById('companyName').value,
+            position: document.getElementById('position').value,
+            companyEmail: document.getElementById('companyEmail').value,
+            companyAddress: document.getElementById('companyAddress').value,
+            companyContact: document.getElementById('companyContact').value,
+            timestamp: new Date().toISOString(), // Record the submission time
+            requesterUserId: currentUserId // Store the user ID (anonymous or authenticated)
+        };
+
+        try {
+            // Define the Firestore collection path for public data
+            const cvRequestsCollection = collection(db, `artifacts/${appId}/public/data/cv_requests`);
+            await addDoc(cvRequestsCollection, formData);
+
+            displayMessage('Thank you for your request! Your CV will be sent to your contact email shortly.', 'bg-green-500 text-white');
+            cvRequestForm.reset(); // Clear the form
+
+            // Placeholder for email notification.
+            // In a real application, you would trigger a serverless function (e.g., Firebase Cloud Function)
+            // or a backend service here to send an email to Kimani with the request details.
+            console.log('CV request submitted:', formData);
+            console.log('--- Placeholder for Email Notification ---');
+            console.log('A real system would now trigger an email to Kimani with these details:');
+            console.log(JSON.stringify(formData, null, 2));
+            console.log('------------------------------------------');
+
+        } catch (error) {
+            console.error('Error submitting CV request:', error);
+            displayMessage('Failed to submit your request. Please try again.', 'bg-red-500 text-white');
+        }
+    });
+
+    // Initialize Firebase and Auth when the window loads
+    window.onload = initializeFirebaseAndAuth;
+</script>
+{% endblock %}

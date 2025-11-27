@@ -1,0 +1,13 @@
+Exclude Python virtual environment
+
+venv/
+*.pyc
+
+Exclude sensitive environment variables and secrets
+
+.env
+
+Exclude Firebase service account key file
+
+serviceAccountKey.json
+*.jsons

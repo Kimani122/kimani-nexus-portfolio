@@ -1,0 +1,110 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<section class="text-center py-16 fade-in" style="animation-delay: 0.1s;">
+    <h1 class="text-6xl font-extrabold text-white leading-tight mb-4 animate-pulse">Welcome to KIMANI NEXUS</h1>
+    <p class="text-2xl text-gray-300">Your Gateway to Innovative Solutions and Digital Excellence.</p>
+</section>
+
+<!-- Skills Section -->
+<section class="py-16 bg-slate-800 rounded-xl shadow-2xl mb-16 fade-in" style="animation-delay: 0.3s;">
+    <h2 class="text-5xl font-bold text-center text-emerald-400 mb-12">My Core Skills</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-8">
+        {% set skills = [
+            ("Python", 85, "bg-blue-600"),
+            ("Flask", 90, "bg-gray-500"),
+            ("Django", 85, "bg-green-600"),
+            ("PHP", 75, "bg-indigo-600"),
+            ("JavaScript", 88, "bg-yellow-500"),
+            ("Kivy", 70, "bg-teal-600"),
+            ("AI Content Creation", 80, "bg-purple-600"),
+            ("AI Knowledge", 85, "bg-red-600"),
+            ("Graphics Automation", 78, "bg-orange-600"),
+            ("Excel Automation (Python)", 92, "bg-emerald-600"),
+            ("System Development", 87, "bg-cyan-600")
+        ] %}
+
+        {% for skill, percentage, color_class in skills %}
+        <div class="bg-slate-700 p-6 rounded-lg shadow-xl transform hover:scale-105 transition-transform duration-300">
+            <h3 class="text-2xl font-semibold text-white mb-3">{{ skill }}</h3>
+            <div class="w-full bg-gray-600 rounded-full h-4">
+                <div class="{{ color_class }} h-4 rounded-full" style="width: {{ percentage }}%;"></div>
+            </div>
+            <p class="text-right text-lg text-gray-300 mt-2">{{ percentage }}% Proficiency</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Projects Section -->
+<section class="py-16 bg-slate-800 rounded-xl shadow-2xl mb-16 fade-in" style="animation-delay: 0.5s;">
+    <h2 class="text-5xl font-bold text-center text-emerald-400 mb-12">My Projects</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-8">
+        <!-- Project Card 1: Video Project -->
+        <div class="bg-slate-700 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
+            <iframe class="w-full h-56 object-cover" src="https://www.youtube.com/embed/dBBqjp3YqKM?si=aEuupOdn7zRVvpZs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <div class="p-6">
+                <h3 class="text-2xl font-semibold text-white mb-2">AI-Powered Content Generation Platform</h3>
+                <p class="text-gray-300 mb-4">Developed a web platform utilizing AI models for automated article writing and social media post creation.</p>
+                <a href="#" class="text-emerald-400 hover:text-emerald-300 transition-colors duration-300 font-medium">View Details &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Project Card 2: Excel Automation Project -->
+        <div class="bg-slate-700 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
+            <img src="/static/images/excel_automation_screenshot.PNG" alt="Excel Report Automation Project Screenshot" class="w-full h-56 object-cover">
+            <div class="p-6">
+                <h3 class="text-2xl font-semibold text-white mb-2">Automated Sales Report Generator</h3>
+                <p class="text-gray-300 mb-4">Python script to read `sales_data_sample.csv`, process data, and generate detailed sales reports in `.xlsx` format.</p>
+                <a href="https://github.com/Kimani122/Python-Excel-Reporter" target="_blank" class="text-emerald-400 hover:text-emerald-300 transition-colors duration-300 font-medium">View Project &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Project Card 3: System Development Project (Bank Management System) -->
+        <div class="bg-slate-700 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
+             <img src="/static/images/bank_system_screenshot.PNG" alt="Bank Management System Project Screenshot" class="w-full h-56 object-cover">
+            <div class="p-6">
+                <h3 class="text-2xl font-semibold text-white mb-2">Bank Management System</h3>
+                <p class="text-gray-300 mb-4">Developed a comprehensive system for managing bank operations, including accounts and transactions.</p>
+                <a href="https://github.com/Kimani122/my-bank-system-project" target="_blank" class="text-emerald-400 hover:text-emerald-300 transition-colors duration-300 font-medium">View Project &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Add more project cards as needed -->
+        <div class="bg-slate-700 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
+            <img src="https://placehold.co/600x400/1e293b/a5f3fc?text=Kivy+App" alt="Kivy App Project" class="w-full h-56 object-cover">
+            <div class="p-6">
+                <h3 class="text-2xl font-semibold text-white mb-2">Cross-Platform Kotlin+Java Application</h3>
+                <p class="text-gray-300 mb-4">Developed a mobile-friendly application using Kotlin+Java for data visualization and user interaction.</p>
+                <a href="#" class="text-emerald-400 hover:text-emerald-300 transition-colors duration-300 font-medium">View Details &rarr;</a>
+            </div>
+        </div>
+
+        <div class="bg-slate-700 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
+            <img src="https://placehold.co/600x400/1e293b/a5f3fc?text=PHP+Web" alt="PHP Web Project" class="w-full h-56 object-cover">
+            <div class="p-6">
+                <h3 class="text-2xl font-semibold text-white mb-2">Dynamic PHP Web Application</h3>
+                <p class="text-gray-300 mb-4">Created a database-driven website using PHP for content management and user authentication.</p>
+                <a href="#" class="text-emerald-400 hover:text-emerald-300 transition-colors duration-300 font-medium">View Details &rarr;</a>
+            </div>
+        </div>
+
+        <div class="bg-slate-700 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300">
+            <img src="https://placehold.co/600x400/1e293b/a5f3fc?text=Graphics+Automation" alt="Graphics Automation Project" class="w-full h-56 object-cover">
+            <div class="p-6">
+                <h3 class="text-2xl font-semibold text-white mb-2">Automated Graphic Design Tool</h3>
+                <p class="text-gray-300 mb-4">Scripted graphic generation processes to create dynamic visuals based on data inputs.</p>
+                <a href="#" class="text-emerald-400 hover:text-emerald-300 transition-colors duration-300 font-medium">View Details &rarr;</a>
+            </div>
+        </div>
+    </div>
+    <div class="text-center mt-12">
+        <a href="#contact" class="px-8 py-4 bg-emerald-600 text-white text-xl font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition-all duration-300 transform hover:scale-105">
+            Explore More Projects
+        </a>
+    </div>
+</section>
+{% endblock %}

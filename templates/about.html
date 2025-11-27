@@ -1,0 +1,52 @@
+<!-- templates/about.html -->
+{% extends "base.html" %}
+
+{% block title %}About Me{% endblock %}
+
+{% block content %}
+<section class="py-16 text-center fade-in" style="animation-delay: 0.1s;">
+    <h1 class="text-6xl font-extrabold text-white leading-tight mb-4">About Me</h1>
+    <p class="text-2xl text-gray-300">Insights into My Journey and Expertise</p>
+</section>
+
+<section class="py-16 bg-slate-800 rounded-xl shadow-2xl mb-16 p-8 fade-in" style="animation-delay: 0.3s;">
+    <div class="max-w-4xl mx-auto">
+        <h2 class="text-4xl font-bold text-emerald-400 mb-8 text-center">My Background & Vision</h2>
+        <div class="prose prose-lg text-gray-300 leading-relaxed">
+            <p class="mb-6">
+                Hello! I'm Kimani, a passionate and versatile developer with a keen interest in building robust and intelligent systems. My journey in technology began with a fascination for how software can solve real-world problems and enhance efficiency. Over the years, I've honed my skills across various domains, from web development to automation and artificial intelligence.
+            </p>
+            <p class="mb-6">
+                My expertise primarily lies in **Python**, where I've extensively worked with frameworks like **Flask** and **Django** to craft scalable web applications. I also have a solid foundation in **PHP** and **JavaScript** for dynamic frontend and backend solutions. Beyond traditional web development, I delve into **Kivy** for cross-platform application development, extending my reach to desktop and mobile environments.
+            </p>
+            <p class="mb-6">
+                A significant part of my work involves **AI and Content Creation**. I leverage artificial intelligence to automate content generation, analyze data, and build intelligent systems that can learn and adapt. My proficiency extends to **Graphics Automation**, where I utilize programming to streamline design processes and generate visual assets. Furthermore, I specialize in **Excel Automation with Python**, transforming tedious manual tasks into efficient, automated workflows, saving valuable time and reducing errors.
+            </p>
+            <p class="mb-6">
+                My overarching goal is **System Development**, focusing on creating comprehensive, end-to-end solutions that are not only functional but also intuitive and user-friendly. I believe in continuous learning and adapting to new technologies to stay at the forefront of innovation.
+            </p>
+
+            <h3 class="text-3xl font-bold text-emerald-400 mb-6 mt-10 text-center">Educational Journey</h3>
+            <div class="bg-slate-700 p-6 rounded-lg shadow-md mb-6">
+                <p class="text-xl font-semibold text-white">Diploma In Informstion Communication Technology</p>
+                <p class="text-gray-400 text-lg">Karumo Technical Training institute, Meru</p>
+                <p class="text-gray-400">Graduation Year: [N/A]</p>
+                <p class="mt-4">
+                    During my studies, I gained a strong theoretical foundation in algorithms, data structures, software engineering principles, and database management. I engaged in numerous projects that allowed me to apply theoretical knowledge to practical scenarios, fostering a problem-solving mindset.
+                </p>
+            </div>
+            <div class="bg-slate-700 p-6 rounded-lg shadow-md">
+                <p class="text-xl font-semibold text-white">Relevant Courses & Certifications</p>
+                <ul class="list-disc list-inside mt-4 text-gray-300">
+                    <li>Advanced Web Development (Focus on Python Flask/Django)</li>
+                    <li>Artificial Intelligence and Machine Learning Principles</li>
+                    <li>Database Systems and Design (SQL, NoSQL)</li>
+                    <li>Software Project Management</li>
+                    <li>Data Analysis and Visualization</li>
+                    <li>Computer Networking </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

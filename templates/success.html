@@ -1,0 +1,17 @@
+<!-- templates/success.html -->
+{% extends "base.html" %}
+
+{% block title %}Success{% endblock %}
+
+{% block content %}
+<section class="py-16 text-center">
+    <h1 class="text-6xl font-extrabold text-white leading-tight mb-4">Request Received!</h1>
+    <p class="text-2xl text-gray-300 mb-8">Thank you for your interest. Your CV request has been successfully submitted.</p>
+    <p class="text-xl text-gray-400">Please check your provided contact email for the CV shortly.</p>
+    <div class="mt-12">
+        <a href="/" class="px-8 py-4 bg-emerald-600 text-white text-xl font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition-all duration-300 transform hover:scale-105">
+            Return to Home
+        </a>
+    </div>
+</section>
+{% endblock %}

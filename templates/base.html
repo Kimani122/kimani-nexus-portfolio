@@ -1,0 +1,112 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIMANI NEXUS - {% block title %}{% endblock %}</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter for a clean, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for social media icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Dark slate blue background */
+            color: #e2e8f0; /* Light gray text */
+        }
+        /* Custom styles for the glowing button effect */
+        .glowing-button {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .glowing-button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                #10b981, /* emerald-500 */
+                #34d399, /* emerald-400 */
+                #6ee7b7, /* emerald-300 */
+                #10b981  /* emerald-500 */
+            );
+            animation: rotate 4s linear infinite;
+            z-index: -1;
+            transform-origin: center center;
+        }
+        .glowing-button::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            background: #1e293b; /* slate-800 */
+            border-radius: 0.5rem; /* rounded-lg */
+            z-index: -1;
+        }
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Fade in animation for sections */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Navigation Bar -->
+    <nav class="bg-gray-900 p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-3xl font-bold text-emerald-400 hover:text-emerald-300 transition-colors duration-300">KIMANI NEXUS</a>
+            <div class="space-x-6">
+                <a href="/" class="text-xl text-gray-300 hover:text-white transition-colors duration-300">Home</a>
+                <a href="/about" class="text-xl text-gray-300 hover:text-white transition-colors duration-300">About Me</a>
+                <a href="/request_cv" class="text-xl text-gray-300 hover:text-white transition-colors duration-300 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 transition-all duration-300 shadow-md">Request CV</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content block -->
+    <main class="flex-grow container mx-auto p-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 p-6 text-center text-gray-400">
+        <div class="container mx-auto">
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="https://instagram.com/yourprofile" target="_blank" class="text-gray-400 hover:text-pink-500 transition-colors duration-300">
+                    <i class="fab fa-instagram fa-2x"></i>
+                </a>
+                <a href="https://twitter.com/yourprofile" target="_blank" class="text-gray-400 hover:text-blue-400 transition-colors duration-300">
+                    <i class="fab fa-twitter fa-2x"></i>
+                </a>
+                <a href="https://linkedin.com/in/yourprofile" target="_blank" class="text-gray-400 hover:text-blue-600 transition-colors duration-300">
+                    <i class="fab fa-linkedin-in fa-2x"></i>
+                </a>
+            </div>
+            <p>&copy; 2025 KIMANI NEXUS. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
+
