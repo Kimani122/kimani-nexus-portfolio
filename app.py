@@ -5,8 +5,9 @@ from firebase_admin import credentials, firestore
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+import json # Import json for parsing the service account JSON string
 
-# Load environment variables from .env
+# Load environment variables from .env (for local dev only)
 load_dotenv()
 
 # --- Configuration and Initialization ---
@@ -28,20 +29,27 @@ APP_ID = os.environ.get('APP_ID')
 MAIL_RECIPIENT = os.environ.get('MAIL_RECIPIENT')
 
 try:
-    # Path to your Firebase Admin SDK service account JSON file (from .env)
-    cred_path = os.environ.get('FIREBASE_SERVICE_ACCOUNT_PATH')
+    # CRITICAL FIX FOR RENDER/CLOUD: Read the Firebase Service Account JSON string 
+    # directly from an environment variable set in the Render Dashboard.
+    firebase_json_config = os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON')
     
     if not firebase_admin._apps:
-        if not os.path.exists(cred_path):
-            print(f"CRITICAL ERROR: Firebase Service Account Key not found at {cred_path}")
+        if firebase_json_config is None:
+            print("CRITICAL ERROR: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set. Cannot initialize Firebase.")
         else:
-            cred = credentials.Certificate(cred_path)
+            # Parse the JSON string from the environment variable into a Python dictionary
+            cred_dict = json.loads(firebase_json_config)
+            
+            # Use the dictionary to create the credentials object
+            cred = credentials.Certificate(cred_dict)
+            
             firebase_admin.initialize_app(cred)
             db = firestore.client()
-            print("Firebase Admin SDK initialized successfully.")
+            print("Firebase Admin SDK initialized successfully via environment JSON.")
     elif 'firebase_admin' in firebase_admin._apps:
         db = firestore.client()
 except Exception as e:
+    # This will catch errors related to json.loads() failing or Firebase initialization issues
     print(f"Error initializing Firebase Admin SDK: {e}")
 
 # --- Routes ---
@@ -52,20 +60,18 @@ def index():
 
 @app.route('/request_cv')
 def request_cv():
-    # This page needs to load the template where the form exists
     return render_template('request_cv.html')
 
-# CRITICAL FIX: Ensure the route accepts the POST method from the form
 @app.route('/submit_cv', methods=['POST']) 
 def submit_cv():
     """
     Handles server-side submission of CV requests.
     Saves the request for manual review and sends a notification email.
-    The CV is NOT sent to the requester automatically.
     """
     
+    # Check if the database was initialized successfully
     if not db:
-        flash('Internal Server Error: Database is unavailable. Please check server logs.', 'error')
+        flash('Internal Server Error: Database is unavailable. Firebase initialization failed.', 'error')
         return redirect(url_for('request_cv'))
 
     try:
@@ -80,11 +86,10 @@ def submit_cv():
             'companyAddress': request.form.get('companyAddress'),
             'companyContact': request.form.get('companyContact'),
             'timestamp': datetime.utcnow(),
-            'status': 'Pending Review' # CRITICAL: New field for vetting
+            'status': 'Pending Review' 
         }
 
         # 2. Save Data to Firestore (Public Collection)
-        # Note: We use the APP_ID from the environment variables here.
         collection_path = f'artifacts/{APP_ID}/public/data/cv_requests'
         db.collection(collection_path).add(form_data)
         print("CV request saved to Firestore for review.")
@@ -112,7 +117,6 @@ def submit_cv():
         print(f"Server-side submission or email error: {e}")
         flash('An internal error occurred during submission. Please try again.', 'error')
 
-    # Redirect back to the form page to display flash messages
     return redirect(url_for('request_cv'))
 
 if __name__ == '__main__':
