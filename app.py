@@ -52,9 +52,11 @@ def index():
 
 @app.route('/request_cv')
 def request_cv():
+    # This page needs to load the template where the form exists
     return render_template('request_cv.html')
 
-@app.route('/submit_cv', methods=['POST'])
+# CRITICAL FIX: Ensure the route accepts the POST method from the form
+@app.route('/submit_cv', methods=['POST']) 
 def submit_cv():
     """
     Handles server-side submission of CV requests.
@@ -82,6 +84,7 @@ def submit_cv():
         }
 
         # 2. Save Data to Firestore (Public Collection)
+        # Note: We use the APP_ID from the environment variables here.
         collection_path = f'artifacts/{APP_ID}/public/data/cv_requests'
         db.collection(collection_path).add(form_data)
         print("CV request saved to Firestore for review.")
