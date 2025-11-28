@@ -5,12 +5,14 @@
 {% block content %}
 <section class="py-16 text-center fade-in" style="animation-delay: 0.1s;">
     <h1 class="text-6xl font-extrabold text-white leading-tight mb-4">Request My CV</h1>
-    <p class="text-2xl text-gray-300">Fill out the form below to receive my Curriculum Vitae.</p>
+    <p class="text-2xl text-gray-300">Fill out the form below to receive my Curriculum Vitae. **Please note: All requests are manually reviewed before the CV is sent.**</p>
 </section>
 
 <section class="py-16 bg-slate-800 rounded-xl shadow-2xl p-8 max-w-2xl mx-auto fade-in" style="animation-delay: 0.3s;">
     <h2 class="text-4xl font-bold text-emerald-400 mb-8 text-center">CV Request Form</h2>
-    <form id="cvRequestForm" class="space-y-6">
+    
+    <!-- FIX: Switched to server-side POST to eliminate client-side Firebase errors and delays -->
+    <form method="POST" action="{{ url_for('submit_cv') }}" class="space-y-6">
         <div>
             <label for="fullName" class="block text-gray-300 text-lg font-medium mb-2">Full Names</label>
             <input type="text" id="fullName" name="fullName" required
@@ -52,172 +54,13 @@
                    class="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
         </div>
 
-        <button type="submit" id="submitButton" disabled
+        <button type="submit" 
                 class="glowing-button w-full px-6 py-4 text-white font-bold text-xl rounded-lg shadow-xl relative transition-all duration-300
-                       hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed">
-            Loading...
+                       hover:text-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+            Submit Request for Review
         </button>
     </form>
-
-    <!-- Success/Error Message Display -->
-    <div id="messageBox" class="hidden mt-8 p-4 rounded-lg text-center" role="alert"></div>
+    
 </section>
-
-<!-- Firebase SDKs -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Global variables from the Canvas environment
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-kimani-nexus-app-id';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    let app, db, auth;
-    let currentUserId = 'anonymous'; // Default to anonymous
-
-    const messageBox = document.getElementById('messageBox');
-    const cvRequestForm = document.getElementById('cvRequestForm');
-    const submitButton = document.getElementById('submitButton'); // Get button reference
-
-    /**
-     * Updates the submit button state once authentication is complete.
-     */
-    function setSubmitReadyState() {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Submit Request';
-        submitButton.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed');
-    }
-
-    /**
-     * Initializes Firebase and authenticates the user.
-     * Uses custom token if available, otherwise signs in anonymously.
-     */
-    async function initializeFirebaseAndAuth() {
-        if (!firebaseConfig) {
-            displayMessage('Error: Firebase configuration not found.', 'bg-red-500 text-white');
-            console.error('Firebase configuration (__firebase_config) is missing.');
-            return;
-        }
-
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            // Listen for auth state changes
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUserId = user.uid;
-                    console.log('Firebase user authenticated:', currentUserId);
-                    // Critical: Enable button once user is authenticated
-                    setSubmitReadyState(); 
-                } else {
-                    console.log('No user signed in. Attempting anonymous sign-in.');
-                    try {
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                        // If sign-in fails, the error handler below catches it,
-                        // but if it succeeds, onAuthStateChanged fires again with a user.
-                    } catch (error) {
-                        console.error('Firebase authentication failed:', error);
-                        displayMessage('Authentication failed. Please try again later.', 'bg-red-500 text-white');
-                        // Keep button disabled if auth ultimately fails
-                        submitButton.textContent = 'Auth Failed'; 
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error initializing Firebase:', error);
-            displayMessage('Failed to initialize Firebase. Please try again later.', 'bg-red-500 text-white');
-        }
-    }
-
-    /**
-     * Displays a message in the messageBox.
-     * @param {string} message - The message to display.
-     * @param {string} typeClass - Tailwind classes for styling the message box (e.g., 'bg-green-500 text-white').
-     */
-    function displayMessage(message, typeClass) {
-        // Clear color classes and ensure the message box is visible
-        messageBox.classList.remove('hidden', 'bg-green-500', 'bg-red-500', 'text-white');
-        
-        // FIX for InvalidCharacterError: Split the string by space and pass the resulting array elements as individual arguments.
-        const classesToAdd = typeClass.split(/\s+/).filter(c => c.length > 0);
-        messageBox.classList.add(...classesToAdd);
-
-        messageBox.textContent = message;
-        
-        // Ensure the message box is visible
-        messageBox.classList.remove('hidden');
-
-        // Hide message after 5 seconds
-        setTimeout(() => {
-            messageBox.classList.add('hidden');
-        }, 5000);
-    }
-
-    /**
-     * Handles the form submission for CV requests.
-     * Collects form data and stores it in Firestore.
-     * @param {Event} event - The form submission event.
-     */
-    cvRequestForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent default form submission
-
-        // Use the submitButton reference captured globally
-        submitButton.disabled = true;
-        const originalText = submitButton.textContent;
-        submitButton.textContent = 'Submitting...';
-
-        // NOTE: The check below is mostly redundant now because the button is disabled 
-        // until authentication is complete, but we keep it as a safeguard.
-        if (!db || !auth || !auth.currentUser) {
-            displayMessage('Database not ready or user not authenticated. Please wait a moment and try again.', 'bg-red-500 text-white');
-            console.error('Firestore or Auth not initialized or user not logged in.');
-            // Revert state if the safeguard fires
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
-            return;
-        }
-
-        const formData = {
-            fullName: document.getElementById('fullName').value,
-            phoneNumber: document.getElementById('phoneNumber').value,
-            requesterEmail: document.getElementById('requesterEmail').value,
-            companyName: document.getElementById('companyName').value,
-            position: document.getElementById('position').value,
-            companyEmail: document.getElementById('companyEmail').value,
-            companyAddress: document.getElementById('companyAddress').value,
-            companyContact: document.getElementById('companyContact').value,
-            timestamp: new Date().toISOString(), // Record the submission time
-            requesterUserId: currentUserId // Store the user ID (anonymous or authenticated)
-        };
-
-        try {
-            // Define the Firestore collection path for public data
-            const cvRequestsCollection = collection(db, `artifacts/${appId}/public/data/cv_requests`);
-            await addDoc(cvRequestsCollection, formData);
-
-            displayMessage('Thank you for your request! Your CV will be sent to your contact email shortly.', 'bg-green-500 text-white');
-            cvRequestForm.reset(); // Clear the form
-
-            console.log('CV request submitted:', formData);
-
-        } catch (error) {
-            console.error('Error submitting CV request:', error);
-            displayMessage('Failed to submit your request. Please try again.', 'bg-red-500 text-white');
-        } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
-        }
-    });
-
-    // Initialize Firebase and Auth when the window loads
-    window.onload = initializeFirebaseAndAuth;
-</script>
+<!-- Removed client-side JavaScript block that was causing issues and is no longer needed -->
 {% endblock %}

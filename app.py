@@ -1,142 +1,116 @@
-# app.py
-
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mail import Mail, Message
-from dotenv import load_dotenv
-import os
-import json
 import firebase_admin
 from firebase_admin import credentials, firestore
-from config import Config # Import the configuration class
+import os
+from dotenv import load_dotenv
+from datetime import datetime
 
-# Load environment variables from .env file (for local development ONLY)
+# Load environment variables from .env
 load_dotenv()
 
-# Initialize Flask app and load configuration
+# --- Configuration and Initialization ---
 app = Flask(__name__)
-# Load configuration from config.py class, which reads all settings from os.environ
-app.config.from_object(Config)
+# Uses SECRET_KEY from .env for session management and flashing messages
+app.secret_key = os.environ.get('SECRET_KEY', 'default_secret_key') 
 
-# Initialize Flask-Mail
+# Flask-Mail configuration (using environment variables from .env)
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT'))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 mail = Mail(app)
 
-# --- Firebase Initialization (Server-Side for Firestore) ---
-# This block handles secure authentication based on the deployment environment.
+# Firebase Admin SDK Initialization
+db = None
+APP_ID = os.environ.get('APP_ID')
+MAIL_RECIPIENT = os.environ.get('MAIL_RECIPIENT')
+
 try:
-    # 1. CHECK FOR RENDER/PAAS ENVIRONMENT VARIABLE (PREFERRED METHOD)
-    # This reads the entire JSON key that you pasted into the Render dashboard.
-    firebase_credentials_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-
-    if firebase_credentials_json:
-        # Load credentials from the JSON string provided in the environment variable
-        cred_dict = json.loads(firebase_credentials_json)
-        cred = credentials.Certificate(cred_dict)
-        print("Firebase Admin SDK initialized successfully using JSON environment variable (Production).")
-    else:
-        # 2. FALLBACK TO LOCAL FILE PATH (FOR DEVELOPMENT)
-        service_account_path = os.path.join(os.path.dirname(__file__), app.config['FIREBASE_SERVICE_ACCOUNT_PATH'])
-        cred = credentials.Certificate(service_account_path)
-        print(f"Firebase Admin SDK initialized successfully using file path: {service_account_path} (Development).")
-        
-    firebase_app = firebase_admin.initialize_app(cred)
-    db = firestore.client()
-
+    # Path to your Firebase Admin SDK service account JSON file (from .env)
+    cred_path = os.environ.get('FIREBASE_SERVICE_ACCOUNT_PATH')
+    
+    if not firebase_admin._apps:
+        if not os.path.exists(cred_path):
+            print(f"CRITICAL ERROR: Firebase Service Account Key not found at {cred_path}")
+        else:
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            print("Firebase Admin SDK initialized successfully.")
+    elif 'firebase_admin' in firebase_admin._apps:
+        db = firestore.client()
 except Exception as e:
-    print(f"CRITICAL ERROR: Failed to initialize Firebase Admin SDK. Check FIREBASE_CREDENTIALS_JSON or service account file path: {e}")
-    # Define a dummy client to prevent the app from crashing entirely during initialization
-    class DummyFirestoreClient:
-        def collection(self, path): return self
-        def add(self, data): 
-            print(f"ERROR: Firestore not initialized. Cannot add data: {data}")
-            raise RuntimeError("Database connection failed.")
-        def document(self, path): return self
-        def set(self, data): print(f"ERROR: Firestore not initialized. Cannot set data: {data}")
-    db = DummyFirestoreClient()
-
-
-# --- Helper Function for Email Notification ---
-def send_notification_email(data):
-    try:
-        msg = Message(
-            subject='NEW CV Request for Kimani Nexus Portfolio',
-            sender=app.config['MAIL_USERNAME'],
-            recipients=[app.config['MAIL_RECIPIENT']]
-        )
-        msg.body = f"""
-        A new CV request has been submitted on your portfolio.
-
-        Requester Details:
-        - Name: {data.get('full_names')}
-        - Position: {data.get('position')}
-        - Company/Institution: {data.get('company_name')}
-        - Company Email: {data.get('company_email')}
-
-        Full Details:
-        {json.dumps(data, indent=2)}
-        """
-        mail.send(msg)
-        print("Email notification sent successfully.")
-    except Exception as e:
-        print(f"WARNING: Failed to send email notification: {e}")
+    print(f"Error initializing Firebase Admin SDK: {e}")
 
 # --- Routes ---
 
 @app.route('/')
 def index():
-    """Renders the main portfolio page."""
     return render_template('index.html')
 
-@app.route('/about')
-def about():
-    """Renders the 'About Me' page."""
-    return render_template('about.html')
-
-@app.route('/request_cv', methods=['GET', 'POST'])
+@app.route('/request_cv')
 def request_cv():
-    """Handles the CV request form submission and processing."""
-    if request.method == 'POST':
-        # Collect form data
-        form_data = {
-            'full_names': request.form['full_names'],
-            'phone_number': request.form['phone_number'],
-            'contact': request.form.get('contact', ''),
-            'company_name': request.form['company_name'],
-            'position': request.form['position'],
-            'company_email': request.form['company_email'],
-            'address': request.form.get('address', ''),
-            'company_contact': request.form.get('company_contact', ''),
-            'timestamp': firestore.SERVER_TIMESTAMP
-        }
-
-        try:
-            # 1. Save data to Firestore
-            current_app_id = app.config['APP_ID']
-            collection_path = f"artifacts/{current_app_id}/public/data/cv_requests"
-            db.collection(collection_path).add(form_data)
-
-            # 2. Send email notification 
-            send_notification_email(form_data)
-            
-            flash('Your CV request has been received! Please wait for the CV to be sent to your email.', 'success')
-
-        except Exception as e:
-            flash(f'There was an error processing your request. Please check your inputs and try again.', 'error')
-            print(f"Error processing CV request: {e}")
-
-        # Redirect to the request CV page to show the flash message
-        return redirect(url_for('request_cv'))
-    
     return render_template('request_cv.html')
 
-@app.route('/success')
-def success():
-    """Renders a success page after a CV request has been submitted."""
-    return render_template('success.html')
+@app.route('/submit_cv', methods=['POST'])
+def submit_cv():
+    """
+    Handles server-side submission of CV requests.
+    Saves the request for manual review and sends a notification email.
+    The CV is NOT sent to the requester automatically.
+    """
+    
+    if not db:
+        flash('Internal Server Error: Database is unavailable. Please check server logs.', 'error')
+        return redirect(url_for('request_cv'))
 
-@app.errorhandler(404)
-def page_not_found(e):
-    """Custom error handler for 404 Not Found errors."""
-    return render_template('404.html'), 404
+    try:
+        # 1. Collect Form Data and Add Review Status
+        form_data = {
+            'fullName': request.form.get('fullName'),
+            'phoneNumber': request.form.get('phoneNumber'),
+            'requesterEmail': request.form.get('requesterEmail'),
+            'companyName': request.form.get('companyName'),
+            'position': request.form.get('position'),
+            'companyEmail': request.form.get('companyEmail'),
+            'companyAddress': request.form.get('companyAddress'),
+            'companyContact': request.form.get('companyContact'),
+            'timestamp': datetime.utcnow(),
+            'status': 'Pending Review' # CRITICAL: New field for vetting
+        }
 
-# NOTE: The if __name__ == '__main__': block is removed for Gunicorn deployment,
-# as Gunicorn executes `app:app` directly.
+        # 2. Save Data to Firestore (Public Collection)
+        collection_path = f'artifacts/{APP_ID}/public/data/cv_requests'
+        db.collection(collection_path).add(form_data)
+        print("CV request saved to Firestore for review.")
+        
+        # 3. Send Notification Email to You (Kimani Nexus)
+        if MAIL_RECIPIENT:
+            notification_msg = Message(
+                f'ACTION REQUIRED: New CV Request from {form_data["companyName"]}',
+                sender=app.config['MAIL_USERNAME'],
+                recipients=[MAIL_RECIPIENT]
+            )
+            notification_msg.body = (
+                f"A new CV request has been submitted by {form_data['fullName']} ({form_data['requesterEmail']}).\n\n"
+                f"Company: {form_data['companyName']} - Position: {form_data['position']}\n"
+                f"Time: {form_data['timestamp'].strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n"
+                f"Please review the request in Firestore (Collection: {collection_path}) before sending the CV manually."
+            )
+            mail.send(notification_msg)
+            flash('Your request has been successfully submitted for review. We will verify the details and send the CV to your email shortly.', 'success')
+        else:
+            flash('Your request has been saved, but the system notification failed. I will review it manually.', 'error')
+
+
+    except Exception as e:
+        print(f"Server-side submission or email error: {e}")
+        flash('An internal error occurred during submission. Please try again.', 'error')
+
+    # Redirect back to the form page to display flash messages
+    return redirect(url_for('request_cv'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
